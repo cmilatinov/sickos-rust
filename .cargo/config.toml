@@ -1,0 +1,26 @@
+[alias]
+# cargo os  -> build the kernel and boot it in QEMU
+# cargo ost -> build and run the in-QEMU test harness
+# cargo osd -> boot frozen with the gdb stub open, wait for a debugger (see README)
+os = "run -p kernel --target x86_64-unknown-none"
+ost = "test -p kernel --target x86_64-unknown-none"
+osd = "run -p kernel --target x86_64-unknown-none -- --gdb"
+
+[target.x86_64-unknown-none]
+# static (non-PIE) ET_EXEC linked at the fixed higher-half address — Limine
+# refuses a PIE that has no PT_DYNAMIC segment
+rustflags = ["-C", "relocation-model=static"]
+# cargo hands the built kernel ELF to xtask, which stages the ESP and launches QEMU.
+# separate --target-dir so the nested cargo invocation never contends for the
+# outer invocation's target/ lock.
+runner = [
+    "cargo",
+    "run",
+    "-q",
+    "--target-dir",
+    "target/xtask",
+    "-p",
+    "xtask",
+    "--",
+    "run-elf",
+]

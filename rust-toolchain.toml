@@ -1,0 +1,5 @@
+[toolchain]
+# pinned so the build never breaks under us; bump deliberately
+channel = "nightly-2025-07-09"
+targets = ["x86_64-unknown-none"]
+components = ["rustfmt", "clippy"]

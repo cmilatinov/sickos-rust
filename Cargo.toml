@@ -1,0 +1,6 @@
+[workspace]
+resolver = "3"
+members = ["kernel", "tools/*"]
+# plain `cargo build`/`cargo run` at the root operates on xtask (host tooling);
+# the kernel is built via `cargo os` / `cargo ost` (see .cargo/config.toml)
+default-members = ["tools/xtask"]

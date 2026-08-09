@@ -1,0 +1,14 @@
+[package]
+name = "kernel"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+limine = "0.5"
+# proc macros compile for the host even in a bare-metal build
+sickos-macros = { path = "../tools/sickos-macros" }
+spin = "0.9"
+uart_16550 = "0.3"
+# default features include `step_trait`, whose unstable-trait impl breaks on
+# current nightlies; we only need `instructions` (hlt, port I/O, ...)
+x86_64 = { version = "0.15", default-features = false, features = ["instructions"] }
