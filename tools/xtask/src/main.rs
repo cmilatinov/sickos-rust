@@ -101,6 +101,7 @@ fn run_elf(elf: &Path, gdb: bool, detach: bool) {
 
     if detach {
         ensure_gdb_port_free();
+        build_gdbk(&root);
         let log = File::create(target.join("qemu.log")).expect("create qemu.log");
         cmd.stdin(Stdio::null())
             .stdout(log.try_clone().expect("dup qemu.log handle"))
@@ -131,6 +132,22 @@ fn run_elf(elf: &Path, gdb: bool, detach: bool) {
         }
         Some(c) => exit(c),
         None => exit(1),
+    }
+}
+
+/// Keep the gdbk debugger wrapper built at a stable path
+/// (target/xtask/debug/gdbk.exe) — the IDE's Remote Debug config points
+/// there, and this runs as its before-launch step.
+fn build_gdbk(root: &Path) {
+    let status = Command::new("cargo")
+        .current_dir(root)
+        // same separate target-dir trick as our own runner invocation
+        .args(["build", "-q", "-p", "gdbk", "--target-dir", "target/xtask"])
+        .status()
+        .expect("run cargo build -p gdbk");
+    if !status.success() {
+        eprintln!("[xtask] failed to build the gdbk debugger wrapper");
+        exit(1);
     }
 }
 

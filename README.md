@@ -21,11 +21,12 @@ downloads the Limine bootloader into `target/` (cached afterwards).
 Env knobs: `SICKOS_HEADLESS=1` runs QEMU without a window; `QEMU_DIR` points
 at a non-standard QEMU install.
 
-> **Note:** the kernel only builds for `x86_64-unknown-none` — the aliases
-> above pass the target for you. A plain `cargo test -p kernel` (what an IDE
-> test runner does by default) targets the host and fails with a build error
-> saying so. In RustRover, create Cargo run configurations whose *Command* is
-> `os` / `ost` instead of using the default test runner.
+> **Note:** the kernel only *runs* on `x86_64-unknown-none` — the aliases
+> above pass the target for you. Host builds exist purely so IDE project sync
+> (`cargo check --workspace`) can analyze the crate: on the host the kernel
+> links std, and running it (e.g. a plain `cargo test -p kernel`, what an IDE
+> test runner does by default) just prints a pointer to `cargo ost` and exits.
+> In RustRover, use Cargo run configurations whose *Command* is `os` / `ost`.
 
 ## Debugging
 
@@ -35,19 +36,35 @@ debugger attaches.
 
 Two entry points (both leave the CPU frozen at reset until you attach):
 
-- `cargo osd` — boots and blocks in the terminal; attach any GDB with
-  `target remote localhost:1234`.
+- `cargo osd` — boots and blocks in the terminal; attach with
+  `target\xtask\debug\gdbk.exe` + `target remote localhost:1234`.
 - `cargo os -- --gdb-detach` — same, but backgrounds QEMU and returns
   immediately. Serial goes to `target/serial.log` (`Get-Content -Wait
   target\serial.log` to follow it), QEMU diagnostics to `target/qemu.log`.
   This is the mode the RustRover setup below uses. If a stale QEMU is still
   holding port 1234, xtask says so instead of failing silently.
 
+### Debugger: the gdbk wrapper
+
+A Windows-hosted gdb assumes a remote target is a Windows process and probes
+it with Windows-only packets (`qGetTIBAddr`), which QEMU's stub rejects,
+disconnecting the session. The fix is one flag (`-iex "set osabi none"`) —
+but RustRover's Remote Debug config only takes a debugger *path*, no flags.
+
+`tools/gdbk` is that flag in executable form: a tiny wrapper that finds a
+gdb (RustRover's own bundled one by default, MSYS2 gdb-multiarch as
+fallback, `SICKOS_GDB` env to override), injects the fix, and forwards
+everything else untouched. No extra installs, no `.gdbinit` files.
+
+The wrapper is (re)built automatically by `cargo os -- --gdb-detach`, landing
+at `target\xtask\debug\gdbk.exe` — run that once before configuring the IDE
+so the file exists.
+
 ### RustRover: one-click debug
 
 1. **Run → Edit Configurations → + → Remote Debug**, name it e.g.
    `kernel (QEMU)`:
-   - Debugger: **Bundled GDB**
+   - Debugger: **Custom GDB binary** → `<repo>\target\xtask\debug\gdbk.exe`
    - `'target remote' args`: `localhost:1234`
    - Symbol file: `<repo>\target\x86_64-unknown-none\debug\kernel`
    - Sysroot / path mappings: leave empty
@@ -70,13 +87,11 @@ Hardware breakpoints (`hbreak`, max 4) don't need the target memory to be
 mapped. Once it stops in `kmain`, paging is live and normal IDE line
 breakpoints work everywhere — set them and resume as usual.
 
-If the bundled GDB refuses the ELF or the remote target, install a
-multiarch/x86_64-elf GDB (e.g. via MSYS2) and select it as a custom debugger
-toolchain in RustRover.
 
 ## Layout
 
 - `kernel/` — the kernel (target `x86_64-unknown-none`, booted via the Limine protocol)
 - `tools/xtask/` — host-side runner: stages the UEFI boot directory, launches QEMU
+- `tools/gdbk/` — debugger wrapper: gdb-multiarch preconfigured for bare-metal remote
 - `boot/limine.conf` — bootloader config
 - `crates/` — (soon) pure-logic `no_std` crates unit-tested on the host
