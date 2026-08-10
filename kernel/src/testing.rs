@@ -29,7 +29,17 @@ impl<T: Fn()> TestCase for T {
     }
 }
 
+#[allow(unreachable_code)] // host builds bail before the real harness below
 pub fn runner(tests: &[&dyn TestCase]) {
+    // a host build of this harness can compile (for IDE analysis) but must
+    // never run — the first port I/O would crash the process
+    #[cfg(not(target_os = "none"))]
+    {
+        let _ = tests; // the real harness below is unreachable on the host
+        eprintln!("kernel tests only run inside QEMU: use `cargo ost`");
+        std::process::exit(2);
+    }
+
     println!("running {} tests", tests.len());
     for test in tests {
         test.run();

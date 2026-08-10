@@ -1,13 +1,17 @@
-#![no_std]
-#![no_main]
+// no_std/no_main only on the real target: host builds (IDE `cargo check`
+// project sync) link std so they can at least be *analyzed* — they are never run
+#![cfg_attr(target_os = "none", no_std)]
+#![cfg_attr(target_os = "none", no_main)]
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::testing::runner)]
 #![reexport_test_harness_main = "test_main"]
 #![cfg_attr(test, allow(dead_code, unused_imports))]
 
 mod framebuffer;
+#[cfg(target_os = "none")] // host builds get std's panic handler
 mod panic;
 mod serial;
+#[cfg(test)]
 mod testing;
 
 use limine::BaseRevision;
@@ -64,6 +68,15 @@ pub fn hcf() -> ! {
     loop {
         x86_64::instructions::hlt();
     }
+}
+
+/// Entry point for host builds, which exist only so `cargo check` (IDE
+/// project sync) can analyze the crate. Running one is always a mistake.
+#[cfg(not(target_os = "none"))]
+fn main() {
+    eprintln!("this is a kernel; it does not run on {}", std::env::consts::OS);
+    eprintln!("use `cargo os` (run), `cargo ost` (test), or `cargo osd` (debug)");
+    std::process::exit(2);
 }
 
 #[cfg(test)]

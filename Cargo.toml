@@ -4,3 +4,12 @@ members = ["kernel", "tools/*"]
 # plain `cargo build`/`cargo run` at the root operates on xtask (host tooling);
 # the kernel is built via `cargo os` / `cargo ost` (see .cargo/config.toml)
 default-members = ["tools/xtask"]
+
+# abort matches the kernel target's spec-level panic strategy; crucially it
+# also lets HOST builds of the kernel pass `cargo check` (IDE project sync):
+# an unwinding no_std binary can't compile without std's unwind machinery
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
