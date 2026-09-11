@@ -3,6 +3,7 @@
 #![cfg_attr(target_os = "none", no_std)]
 #![cfg_attr(target_os = "none", no_main)]
 #![feature(custom_test_frameworks)]
+#![feature(abi_x86_interrupt)]
 #![test_runner(crate::testing::runner)]
 #![reexport_test_harness_main = "test_main"]
 #![cfg_attr(test, allow(dead_code, unused_imports))]
@@ -13,6 +14,9 @@ mod panic;
 mod serial;
 #[cfg(test)]
 mod testing;
+mod arch;
+mod cell;
+mod stack;
 
 use limine::BaseRevision;
 use limine::request::{FramebufferRequest, RequestsEndMarker, RequestsStartMarker};
@@ -36,6 +40,8 @@ static _END_MARKER: RequestsEndMarker = RequestsEndMarker::new();
 #[unsafe(no_mangle)]
 unsafe extern "C" fn kmain() -> ! {
     serial::init();
+    arch::gdt::init();
+    
     println!("sickos v{}", env!("CARGO_PKG_VERSION"));
     assert!(BASE_REVISION.is_supported(), "limine base revision unsupported");
     
