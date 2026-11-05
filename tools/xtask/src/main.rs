@@ -56,8 +56,11 @@ fn run_elf(elf: &Path, gdb: bool, detach: bool) {
     std::fs::create_dir_all(&boot_dir).expect("create ESP directories");
     let limine_efi = ensure_limine(&target);
     std::fs::copy(&limine_efi, boot_dir.join("BOOTX64.EFI")).expect("copy BOOTX64.EFI");
-    std::fs::copy(root.join("boot").join("limine.conf"), esp.join("limine.conf"))
-        .expect("copy limine.conf");
+    std::fs::copy(
+        root.join("boot").join("limine.conf"),
+        esp.join("limine.conf"),
+    )
+    .expect("copy limine.conf");
     std::fs::copy(elf, esp.join("kernel.elf")).expect("copy kernel ELF");
 
     // UEFI firmware: read-only code flash + a fresh writable vars flash.
@@ -117,7 +120,10 @@ fn run_elf(elf: &Path, gdb: bool, detach: bool) {
             }
             exit(1);
         }
-        println!("[xtask] QEMU started detached (pid {}), CPU frozen at reset", child.id());
+        println!(
+            "[xtask] QEMU started detached (pid {}), CPU frozen at reset",
+            child.id()
+        );
         println!("[xtask] gdb stub: localhost:1234");
         println!("[xtask] serial:   {}", target.join("serial.log").display());
         return;
@@ -158,7 +164,9 @@ fn build_gdbk(root: &Path) {
 fn ensure_gdb_port_free() {
     let addr = std::net::SocketAddr::from(([127, 0, 0, 1], 1234));
     if std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(250)).is_ok() {
-        eprintln!("[xtask] gdb port 1234 is already in use — a previous QEMU is likely still running.");
+        eprintln!(
+            "[xtask] gdb port 1234 is already in use — a previous QEMU is likely still running."
+        );
         eprintln!("[xtask] kill it and retry (PowerShell: Stop-Process -Name qemu-system-x86_64).");
         exit(1);
     }

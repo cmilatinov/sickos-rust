@@ -1,8 +1,9 @@
 use crate::cell::SyncUnsafeCell;
-use const_format::assertcp;
 use crate::stack::Stack;
+use const_format::assertcp;
 
-pub(crate) static TSS: SyncUnsafeCell<TaskStateSegment> = SyncUnsafeCell::new(TaskStateSegment::new());
+pub(crate) static TSS: SyncUnsafeCell<TaskStateSegment> =
+    SyncUnsafeCell::new(TaskStateSegment::new());
 static DOUBLE_FAULT_STACK: SyncUnsafeCell<Stack<4096>> = SyncUnsafeCell::new(Stack::new());
 
 #[repr(C, packed(4))]
@@ -37,5 +38,5 @@ impl TaskStateSegment {
 }
 
 pub fn init() {
-    unsafe { TSS.get_mut() }.ist[0] = unsafe { DOUBLE_FAULT_STACK.get() }.top() as u64;
+    unsafe { &mut *TSS.as_ptr() }.ist[0] = unsafe { DOUBLE_FAULT_STACK.get() }.top() as u64;
 }

@@ -28,6 +28,39 @@ at a non-standard QEMU install.
 > test runner does by default) just prints a pointer to `cargo ost` and exits.
 > In RustRover, use Cargo run configurations whose *Command* is `os` / `ost`.
 
+## Agentic
+
+This repository enables Agentic at project scope in all three harnesses:
+
+- Claude Code: `.claude/settings.json` enables `agentic@corebit-instruments`.
+- Codex: `.codex/config.toml` enables `agentic@corebit-instruments`.
+- OpenCode: `opencode.json` enables `agentic`.
+
+Install the CLI and plugin using the
+[Agentic setup instructions](https://github.com/corebit-instruments/agentic#readme),
+then start a session in this repository (trusted in Codex). `agentic doctor`
+checks the local installation and activation for every harness. `CLAUDE.md`
+imports the shared guidance from `AGENTS.md`.
+
+`agentic.toml` is the source of truth for formatting, host and bare-metal
+Clippy checks, host tests, and the in-QEMU kernel tests. For unattended
+validation in PowerShell:
+
+```powershell
+$env:SICKOS_HEADLESS = "1"
+agentic local validate
+```
+
+`agentic local commit` formats staged Rust changes and runs the commit checks;
+`agentic remote pr` runs the full validation before publishing. CI runs the
+same declared checks on Windows with headless QEMU. Because the Agentic source
+repository is private, CI reads the command arrays directly from `agentic.toml`
+without requiring credentials to install the CLI.
+
+Engineering Tasks use the existing
+[SickOS Roadmap](https://github.com/users/cmilatinov/projects/3) Project.
+See [AGENTS.md](AGENTS.md) for repository guidance.
+
 ## Debugging
 
 QEMU has a built-in GDB stub; the kernel is a debug-build ELF statically

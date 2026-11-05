@@ -1,0 +1,48 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    env:
+      SICKOS_HEADLESS: "1"
+      QEMU_DIR: C:\Program Files\qemu
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+      - name: Install the pinned Rust toolchain
+        run: rustup toolchain install
+      - name: Install QEMU with edk2 firmware
+        run: choco install qemu --yes --no-progress
+      # Agentic is private. Run its declared checks without a cross-repository token.
+      - name: Run the Agentic validation checks
+        shell: python
+        run: |
+          import subprocess
+          import tomllib
+
+          with open("agentic.toml", "rb") as manifest:
+              checks = [check for check in tomllib.load(manifest)["check"]
+                        if "validate" in check.get("on", ["validate"])]
+          if not checks:
+              raise SystemExit("agentic.toml declares no validation checks")
+          for check in checks:
+              print(f"::group::{check['name']}", flush=True)
+              try:
+                  subprocess.run(check["run"], check=True, timeout=300)
+              finally:
+                  print("::endgroup::", flush=True)

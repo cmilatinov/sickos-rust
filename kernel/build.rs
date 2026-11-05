@@ -13,7 +13,9 @@ fn main() {
         return;
     }
 
-    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").unwrap().replace('\\', "/");
+    let manifest_dir = std::env::var("CARGO_MANIFEST_DIR")
+        .unwrap()
+        .replace('\\', "/");
     println!("cargo:rustc-link-arg=-T{manifest_dir}/linker.ld");
     println!("cargo:rerun-if-changed=linker.ld");
 }
