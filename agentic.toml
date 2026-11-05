@@ -1,0 +1,35 @@
+default_base = "main"
+
+[[format]]
+name = "rustfmt"
+run = ["cargo", "fmt", "--all"]
+
+[[check]]
+name = "format"
+run = ["cargo", "fmt", "--all", "--", "--check"]
+fix = ["cargo", "fmt", "--all"]
+on = ["commit", "validate"]
+
+[[check]]
+name = "host-lint"
+run = ["cargo", "clippy", "--workspace", "--all-targets", "--locked"]
+on = ["commit", "validate"]
+
+[[check]]
+name = "kernel-lint"
+run = ["cargo", "clippy", "-p", "kernel", "--all-targets", "--target", "x86_64-unknown-none", "--locked"]
+on = ["commit", "validate"]
+
+[[check]]
+name = "host-tests"
+run = ["cargo", "test", "--workspace", "--exclude", "kernel", "--locked"]
+
+[[check]]
+name = "kernel-tests"
+run = ["cargo", "ost", "--locked"]
+
+[tasks]
+project_number = 3
+project_owner = "cmilatinov"
+default_repo = "cmilatinov/sickos-rust"
+default_status = "Todo"
