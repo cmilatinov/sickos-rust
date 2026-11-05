@@ -30,11 +30,17 @@ at a non-standard QEMU install.
 
 ## Agentic
 
-This repository enables the `agentic@corebit-instruments` plugin in Codex at
-project scope. Install the CLI and plugin using the
+This repository enables Agentic at project scope in all three harnesses:
+
+- Claude Code: `.claude/settings.json` enables `agentic@corebit-instruments`.
+- Codex: `.codex/config.toml` enables `agentic@corebit-instruments`.
+- OpenCode: `opencode.json` enables `agentic`.
+
+Install the CLI and plugin using the
 [Agentic setup instructions](https://github.com/corebit-instruments/agentic#readme),
-then start a Codex session in this trusted repository. `agentic doctor` checks
-the local installation and project activation.
+then start a session in this repository (trusted in Codex). `agentic doctor`
+checks the local installation and activation for every harness. `CLAUDE.md`
+imports the shared guidance from `AGENTS.md`.
 
 `agentic.toml` is the source of truth for formatting, host and bare-metal
 Clippy checks, host tests, and the in-QEMU kernel tests. For unattended
