@@ -3,7 +3,6 @@ use crate::cell::SyncUnsafeCell;
 use crate::println;
 use bitfield_struct::bitfield;
 use derive_more::Debug;
-use core::fmt::{Debug, Formatter};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use seq_macro::seq;
 use x86_64::registers::control::{Cr2, Cr3};
@@ -169,7 +168,7 @@ impl Interrupt {
 }
 
 pub fn init() {
-    let idt = unsafe { &mut *IDT.get_mut() };
+    let idt = unsafe { &mut *IDT.as_ptr() };
     *idt = InterruptDescriptorTable::with_entries([
         (3, GateDescriptor::system(breakpoint as u64)),
         (6, GateDescriptor::system(invalid_opcode as u64)),
@@ -221,22 +220,28 @@ fn exception_header(interrupt: Interrupt, code: Option<u64>) {
 #[inline]
 fn dump_registers(
     registers: impl IntoIterator<Item = StackFrameRegister>,
-    interrupt: Interrupt,
-    code: Option<u64>,
+    frame: &InterruptStackFrame,
 ) {
     for register in registers {
-        println!("  {:#6?} {:#018x}", register);
+        println!(
+            "  {:#6?} {:#018x}",
+            register,
+            register_value(&register, frame)
+        );
     }
 }
 
 #[inline]
-fn register_value(register: StackFrameRegister, frame: InterruptStackFrame) -> u46 {
+fn register_value(register: &StackFrameRegister, frame: &InterruptStackFrame) -> u64 {
     match register {
         StackFrameRegister::Rip => frame.instruction_pointer.as_u64(),
         StackFrameRegister::Rsp => frame.stack_pointer.as_u64(),
         StackFrameRegister::Rflags => frame.cpu_flags.bits(),
         StackFrameRegister::Cr2 => Cr2::read_raw(),
-        StackFrameRegister::Cr3 => Cr3::read_raw(),
+        StackFrameRegister::Cr3 => {
+            let (frame, flags) = Cr3::read_raw();
+            frame.start_address().as_u64() | u64::from(flags)
+        }
     }
 }
 

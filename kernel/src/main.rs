@@ -8,15 +8,15 @@
 #![reexport_test_harness_main = "test_main"]
 #![cfg_attr(test, allow(dead_code, unused_imports))]
 
+mod arch;
+mod cell;
 mod framebuffer;
 #[cfg(target_os = "none")] // host builds get std's panic handler
 mod panic;
 mod serial;
+mod stack;
 #[cfg(test)]
 mod testing;
-mod arch;
-mod cell;
-mod stack;
 
 use limine::BaseRevision;
 use limine::request::{FramebufferRequest, RequestsEndMarker, RequestsStartMarker};
@@ -41,10 +41,13 @@ static _END_MARKER: RequestsEndMarker = RequestsEndMarker::new();
 unsafe extern "C" fn kmain() -> ! {
     serial::init();
     arch::gdt::init();
-    
+
     println!("sickos v{}", env!("CARGO_PKG_VERSION"));
-    assert!(BASE_REVISION.is_supported(), "limine base revision unsupported");
-    
+    assert!(
+        BASE_REVISION.is_supported(),
+        "limine base revision unsupported"
+    );
+
     #[cfg(test)]
     test_main();
 
@@ -80,7 +83,10 @@ pub fn hcf() -> ! {
 /// project sync) can analyze the crate. Running one is always a mistake.
 #[cfg(not(target_os = "none"))]
 fn main() {
-    eprintln!("this is a kernel; it does not run on {}", std::env::consts::OS);
+    eprintln!(
+        "this is a kernel; it does not run on {}",
+        std::env::consts::OS
+    );
     eprintln!("use `cargo os` (run), `cargo ost` (test), or `cargo osd` (debug)");
     std::process::exit(2);
 }
@@ -91,8 +97,10 @@ mod tests {
     use sickos_macros::test;
 
     #[test]
-    fn smoke() {
-        assert_eq!(2 + 2, 4);
+    fn stack_bounds() {
+        let stack = crate::stack::Stack::<4096>::new();
+        assert_eq!(stack.top().addr() - stack.bottom().addr(), 4096);
+        assert_eq!(stack.bottom().addr() % 16, 0);
     }
 
     #[test]

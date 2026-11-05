@@ -7,15 +7,15 @@ impl<const N: usize> Stack<N> {
     pub const fn new() -> Stack<N> {
         Stack([0; N])
     }
-    
+
     pub const fn size() -> usize {
         N
     }
-    
+
     pub fn bottom(&self) -> *const u8 {
         &self.0 as _
     }
-    
+
     pub fn top(&self) -> *const u8 {
         (&self.0 as *const u8).wrapping_add(N)
     }

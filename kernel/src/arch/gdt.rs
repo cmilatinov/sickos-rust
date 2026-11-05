@@ -414,7 +414,7 @@ pub fn init() {
     let [tss1, tss2] = LongModeSegmentDescriptor::tss(TSS.as_ptr() as u64)
         .into_raw()
         .into_parts();
-    let gdt = unsafe { GDT.get_mut() };
+    let gdt = unsafe { &mut *GDT.as_ptr() };
     gdt.entries[3] = tss1;
     gdt.entries[4] = tss2;
     let ptr = DescriptorTablePointer {
